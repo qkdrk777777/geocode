@@ -57,27 +57,28 @@ geocode=function(name,port1=4565L,port2=4566L,port3=4567L,n=3,plot=F){
       assign('search',remDr$findElement(using='css selector',value='input#searchboxinput.tactile-searchbox-input'))
     }
   })
+  tryCatch({
+    data=NULL;data2=NULL
+    for(i in 1:length(name)){
+      search$clearElement()
+      search$sendKeysToElement(list(name[i],key='enter'))
+      Sys.sleep(n)
+      lonlat=as.numeric(str_split(substr(remDr$getCurrentUrl()[[1]],
+                                         regexpr('@',remDr$getCurrentUrl()[[1]])+1,regexpr(',[0-9]+z',remDr$getCurrentUrl()[[1]])-1),',')[[1]])
+      if(i>1){
+        if((data[nrow(data),'lon']==lonlat[2])&(data[nrow(data),'lat']==lonlat[1])){lonlat=c(NA,NA)}}
+      ifelse(sum(is.na(lonlat))>=1,
+             data2<-rbind(data2,data.frame(name=name[i],lat=lonlat[1],lon=lonlat[2]))
+             ,data<-rbind(data,data.frame(name=name[i],lat=lonlat[1],lon=lonlat[2]))
+      )
+    }
 
-  data=NULL;data2=NULL
-  for(i in 1:length(name)){
-    search$clearElement()
-    search$sendKeysToElement(list(name[i],key='enter'))
-    Sys.sleep(n)
-    lonlat=as.numeric(str_split(substr(remDr$getCurrentUrl()[[1]],
-                                       regexpr('@',remDr$getCurrentUrl()[[1]])+1,regexpr(',[0-9]+z',remDr$getCurrentUrl()[[1]])-1),',')[[1]])
-    if(i>1){
-      if((data[nrow(data),'lon']==lonlat[2])&(data[nrow(data),'lat']==lonlat[1])){lonlat=c(NA,NA)}}
-    ifelse(sum(is.na(lonlat))>=1,
-           data2<-rbind(data2,data.frame(name=name[i],lat=lonlat[1],lon=lonlat[2]))
-           ,data<-rbind(data,data.frame(name=name[i],lat=lonlat[1],lon=lonlat[2]))
-    )
-  }
-  try(silent = T,rD$server$stop())
-  try(silent = T,remDr$close())
-  try(silent = T,pJS$stop())
-  if(nrow(data2)!=0){
-    message('please check data2')}
-  return(list(list=data,check=data2))
+    try(silent = T,rD$server$stop())
+    try(silent = T,remDr$close())
+    try(silent = T,pJS$stop())
+    if(nrow(data2)!=0){
+      message('please check data2')}
+    return(list(list=data,check=data2))
+  },error=function(e){message('perase increase n')})
 }
-
 #devtools::document()
